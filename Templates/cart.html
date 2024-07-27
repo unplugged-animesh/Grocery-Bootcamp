@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cart</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='cart.css') }}">
+</head>
+
+<body>
+    <div class="my-box">
+        <div class="back">
+            <a href="{{ url_for('customer_dashboard', curr_login_id=data.curr_login_id) }}" class="back-btn">Home</a>
+        </div>
+        <h1>{{name}}'s Cart</h1>
+        {% if not data.isEmpty %}
+        <table class="cart-table">
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Action</th>
+            </tr>
+            {% for item, pdt in data.cartitem_pdt %}
+            <tr>
+                <td class="product-name">{{ pdt.name }}</td>
+                <td class="product-price">{{ pdt.price }} ₹</td>
+                <td class="product-quantity">
+                    <form method="POST"
+                        action="{{ url_for('update_cart_quantity', curr_login_id=data.curr_login_id, product_id=pdt.id) }}">
+                        {%if pdt.quantity > 0%}
+                        <input type="number" name="quantity" value="{{[item.quantity, pdt.quantity]|min}}" min="0"
+                            max="{{ pdt.quantity }}">
+                        {%else%}
+                        Out of Stock
+                        {%endif%}
+                </td>
+                <td class="product-subtotal">{{ pdt.price * [item.quantity, pdt.quantity]|min }} ₹
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button type="submit" class="update-quantity-btn">Update</button>
+                        </form>
+                        <form method="POST"
+                            action="{{ url_for('remove_from_cart', curr_login_id=data.curr_login_id, product_id=pdt.id) }}">
+                            <button type="submit" class="remove-btn">Remove Product</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="3" class="total-label">Total:</td>
+                <td class="total-amount" colspan="2">{{ data.amount }} ₹</td>
+            </tr>
+        </table>
+        <div class="checkout-button">
+            <a href="{{ url_for('checkout', curr_login_id=data.curr_login_id) }}" class="checkout-btn">Proceed to
+                Checkout</a>
+        </div>
+        {% else %}
+        <p>{{name}},Your cart is empty.</p>
+        {% endif %}
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Checkout</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='checkout.css') }}">
+</head>
+
+<body>
+    <div class="my-box">
+        <div class="back">
+            <a href="{{ url_for('cart', curr_login_id=data.curr_login_id) }}" class="back-btn">Back to Cart</a>
+        </div>
+        <h1>Checkout</h1>
+        <div class="cart-summary">
+            <h2>Your Order Summary:</h2>
+            <table class="cart-table">
+                <tr>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Subtotal</th>
+                </tr>
+                {% for item, pdt in data.cartitem_pdt %}
+                <tr>
+                    <td class="product-name">{{ pdt.name }}</td>
+                    <td class="product-price">{{ pdt.price }} ₹</td>
+                    <td class="product-quantity">{{ [item.quantity, pdt.quantity]|min }}</td>
+                    <td class="product-subtotal">{{ pdt.price*[item.quantity, pdt.quantity]|min }} ₹</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="3" class="total-label">Total:</td>
+                    <td class="total-amount">{{ data.amount }} ₹</td>
+                </tr>
+            </table>
+        </div>
+        {% if not data.isEmpty %}
+        <form method="POST" action="{{ url_for('checkout', curr_login_id=data.curr_login_id) }}">
+            <div class="checkout-button">
+                <button type="submit" class="checkout-btn">Place Order</button>
+            </div>
+        </form>
+        {%else%}
+        Nothing to checkout
+        {%endif%}
+    </div>
+</body>
+
+</html>

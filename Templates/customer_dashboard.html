@@ -1,11 +1,64 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+    <title>Customer Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='customer_db.css') }}">
 </head>
+
 <body>
-	
+    <div class="my-box">
+        <div class="logout">
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </div>
+        <h1>Hi {{name}}! Welcome to the Customer Dashboard</h1>
+        <div class="cart-button">
+            <a href="{{ url_for('cart', curr_login_id=data.curr_login_id) }}" class="view-cart-btn">View Cart</a>
+        </div>
+        <div class="section">
+            <h2>Categories</h2>
+            {% for category, pdts in data.cart.items() %}
+            <div class="category">
+                <h3 class="category-name">{{ category }}</h3>
+                <table class="product-table">
+                    <tr>
+                        <th>Product</th>
+                        <th>Rate</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>Mf Date</th>
+                        <th>Expiry Date</th>
+                        <th>Add to Cart</th>
+                    </tr>
+                    {% for my_count, product in pdts %}
+                    <tr>
+                        <td class="product-name">{{ product.name }}</td>
+                        <td class="product-rate">{{ product.price}} ₹</td>
+                        <td class="product-quantity">
+                            {% if product.quantity == 0 %}
+                            Out of Stock
+                            {% else %}
+                            {{ product.quantity }}
+                            {% endif %}
+                        </td>
+                        <td class="product-unit">{{ product.unit }}</td>
+                        <td class="product-mf-date">{{ product.mf_date }}</td>
+                        <td class="product-expiry-date">{{ product.expiry_date }}</td>
+                        <td>
+                            <form method="POST"
+                                action="{{ url_for('customer_add_to_cart', curr_login_id=data.curr_login_id, product_id=product.id) }}">
+                                <input type="number" name="quantity" value="0" min="0"
+                                    max="{{ product.quantity-my_count }}">
+                                <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 </body>
+
 </html>

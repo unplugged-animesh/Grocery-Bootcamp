@@ -114,7 +114,19 @@ def admin_dashboard(curr_login_id):
         
         flash('Please login to acess the admin dashboard')
         return redirect(url_for('logout'))
-
+    
+@app.route('/customer/<int:curr_login_id>/dashboard', methods=['GET'])
+def customer_dashboard(curr_login_id):
+    if request.method == 'GET':
+        if 'user_id' in session and session['user_id'] == curr_login_id:
+            categories = Category.query.all()
+            user_cart = Cart.query.filter_by(user_id=curr_login_id).first()
+            data = {'curr_login_id': curr_login_id,
+                    'cart': {f'{category.name}': [((lambda x: 0 if x is None else x.quantity)(CartItem.query.filter_by(
+                        cart_id=user_cart.id, cartitem_product_id=product.id).first()), product) for product in category.products] for category in categories}}
+            return render_template('customer_dashboard.html', data=data, name=User.query.get(curr_login_id).username)
+        flash('Please login to access the admin dashboard.')
+        return redirect(url_for('logout'))
 
 @app.route('/admin/<int:curr_login_id>/create_category',methods=['GET',"POST"])
 def create_category(curr_login_id):
@@ -264,7 +276,124 @@ def remove_product(curr_login_id, product_id):
     return render_template('remove_product.html', curr_login_id=curr_login_id,product=product)
 
         
-        
+@app.route('/customer/<int:curr_login_id>/product/<int:product_id>/add-to-cart', methods=['GET', 'POST'])
+def customer_add_to_cart(curr_login_id, product_id):
+    if 'user_id' not in session or curr_login_id != session['user_id']:
+        flash('Current session logged out!')
+        return redirect(url_for('logout'))
+
+    product = Product.query.get_or_404(product_id)
+    quantity = int(request.form['quantity'])
+    cart = Cart.query.filter_by(user_id=curr_login_id).first()
+    existing_quantity = 0
+    found = False
+    for item in cart.items:
+        if product.id == item.cartitem_product_id:
+            existing_quantity = item.quantity
+            found = True
+            break
+    if product.quantity >= quantity+existing_quantity:
+        if not found:
+            cart_item = CartItem(
+                cart_id=cart.id, quantity=quantity, cartitem_product_id=product_id)
+            db.session.add(cart_item)
+            cart.cart_count += 1
+        else:
+            item.quantity += quantity
+        db.session.commit()
+
+    return redirect(url_for('customer_dashboard', curr_login_id=curr_login_id))
+
+
+@app.route('/customer/<int:curr_login_id>/cart', methods=['GET'])
+def cart(curr_login_id):
+    if 'user_id' not in session or curr_login_id != session['user_id']:
+        flash('Current session logged out!')
+        return redirect(url_for('logout'))
+
+    cart = Cart.query.filter_by(user_id=curr_login_id).first()
+    cartitem_pdt = [(item, Product.query.get(item.cartitem_product_id))
+                    for item in cart.items]
+
+    data = {'cartitem_pdt': cartitem_pdt, 'isEmpty': True if len(cartitem_pdt) == 0 else False,
+            'amount': sum(Product.query.get(item.cartitem_product_id).price *
+                          min(item.quantity, Product.query.get(item.cartitem_product_id).quantity) for item in cart.items), 'curr_login_id': curr_login_id}
+
+    return render_template('cart.html', data=data, name=User.query.get(curr_login_id).username)
+
+
+@app.route('/customer/<int:curr_login_id>/cart/<int:product_id>/edit', methods=['POST'])
+def update_cart_quantity(curr_login_id, product_id):
+    if 'user_id' not in session or curr_login_id != session['user_id']:
+        flash('Current session logged out!')
+        return redirect(url_for('logout'))
+
+    cart_item = CartItem.query.filter_by(
+        cartitem_product_id=product_id).first()
+
+    if not cart_item:
+        flash('Product not found in cart.')
+        return redirect(url_for('cart', curr_login_id=curr_login_id))
+
+    product = Product.query.get(cart_item.cartitem_product_id)
+    new_quantity = int(request.form['quantity'])
+
+    if new_quantity <= product.quantity:
+        cart_item.quantity = new_quantity
+        db.session.commit()
+
+    return redirect(url_for('cart', curr_login_id=curr_login_id))
+
+
+@app.route('/customer/<int:curr_login_id>/cart/<int:product_id>/remove-cartitem', methods=['POST'])
+def remove_from_cart(curr_login_id, product_id):
+    if 'user_id' not in session or curr_login_id != session['user_id']:
+        flash('Current session logged out!')
+        return redirect(url_for('logout'))
+
+    cart_item = CartItem.query.filter_by(
+        cartitem_product_id=product_id).first()
+
+    if not cart_item:
+        flash('Product not found in cart.')
+        return redirect(url_for('cart', curr_login_id=curr_login_id))
+
+    db.session.delete(cart_item)
+    db.session.commit()
+
+    flash('Product removed from cart and quantity added back.')
+    return redirect(url_for('cart', curr_login_id=curr_login_id))
+
+
+@app.route('/customer/<int:curr_login_id>/checkout', methods=['GET', 'POST'])
+def checkout(curr_login_id):
+    if 'user_id' not in session or curr_login_id != session['user_id']:
+        flash('Current session logged out!')
+        return redirect(url_for('logout'))
+
+    cart = Cart.query.filter_by(user_id=curr_login_id).first()
+    cartitem_pdt = [(item, Product.query.get(item.cartitem_product_id))
+                    for item in cart.items if Product.query.get(item.cartitem_product_id).quantity > 0]
+    data = {'cartitem_pdt': cartitem_pdt, 'isEmpty': True if len(cartitem_pdt) == 0 else False,
+            'amount': sum(Product.query.get(item.cartitem_product_id).price *
+                          min(item.quantity, Product.query.get(item.cartitem_product_id).quantity) for item in cart.items), 'curr_login_id': curr_login_id, 'isEmpty': True if len(cartitem_pdt) == 0 else False}
+    if request.method == 'POST':
+
+        db.session.commit()
+
+        for item in cart.items:
+            product = Product.query.get(item.cartitem_product_id)
+            product.quantity -= item.quantity
+            product.sold_quantity += item.quantity
+
+        db.session.delete(cart)
+        cart = Cart(user_id=curr_login_id)
+        db.session.add(cart)
+        db.session.commit()
+
+        return redirect(url_for('customer_dashboard', curr_login_id=curr_login_id))
+
+    return render_template('checkout.html', data=data) 
     
     
     
