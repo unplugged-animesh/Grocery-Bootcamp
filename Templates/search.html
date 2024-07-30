@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Search Result</title>
+</head>
+<body>
+		<div class="can">
+			<div class="back">
+				<a href="{{url_for ('customer_dashboard',curr_login_id=curr_login_id)}}" class="back_btn">Home</a>
+			</div>
+			<div class="bac-bt">
+				<a href="{{url_for ('logout')}}" class="lg_btn">Logout</a>
+			</div>
+			<h1>Search Results for "{{search_query}}"</h1>
+			{%if products %}
+			<div class="list">
+				{% for product in products %}
+				<div class='prod-l'>
+					<h3 class='p-name'>{{product.name}}</h3>
+					<p class='p-rate'>Rate:{{product.price}}</p>
+					<p class='p-quantity'>Quantity:{{product.quantity}}</p>
+					<p class='p-unit'>Unit:{{product.unit}}</p>
+					<p class='p-mf-date'>Mf_date:{{product.mf_date}}</p>
+					<p class='p-expiry_date'>Expiry Date:{{product.expiry_date}}</p>
+					<form method="POST"
+					action="{{url_for('customer_add_to_cart',curr_login_id=curr_login_id,product_id=product.id)}}">
+					<input type="number" name="quantity" value="1" min="1" max="{{product.quantity}}">
+					<button type='submit' class="add">Add to Cart</button>
+					</form>
+				</div>
+			{%endfor%}
+		</div>
+		{% endif %}	
+		{%if categories %}
+		<div class="cate-list">
+			{%for category in categories%}
+			<div class='cate'>
+				<h3 class="cate-name">{{category.name}}</h3>
+				<div class='cate_prod'>
+					{%for product in category.products %}
+					<div class="prod">
+						<h3 class='p-name'>{{product.name}}</h3>
+						<p class='p-rate'>Rate:{{product.price}}</p>
+						<p class='p-quantity'>Quantity:{{product.quantity}}</p>
+						<p class='p-unit'>Unit:{{product.unit}}</p>
+						<p class='p-mf-date'>Mf_date:{{product.mf_date}}</p>
+						<p class='p-expiry_date'>Expiry Date:{{product.expiry_date}}</p>
+						<form method="POST"
+						action="{{url_for('customer_add_to_cart',curr_login_id=curr_login_id,product_id=product.id)}}">
+						<input type="number" name="quantity" value="1" min="1" max="{{product.quantity}}">
+						<button type='submit' class="add">Add to Cart</button>
+						</form>
+					</div>
+				{%endfor%}		
+			</div>
+		</div>
+	{%endfor%}	
+	</div>	
+	{%endif%}
+
+	{%if not products and not categories %}
+	<p class="no">No result found</p>
+	{%endif%}
+</div>
+
+
+
+</body>
+</html>

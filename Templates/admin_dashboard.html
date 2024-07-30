@@ -10,6 +10,9 @@
         <div class="logout">
             <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
         </div>
+        <div class="east">
+            <a href="{{ url_for('admin_stats', curr_login_id=data.curr_login_id) }}" class="view-east-btn">View Statistics</a>
+        </div>
         <h1>Hi {{name}}! Welcome to the Admin Dashboard</h1>
         <div class="section">
             <h2>Categories</h2>

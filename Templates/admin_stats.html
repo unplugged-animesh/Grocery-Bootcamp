@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Admin Statistics</title>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+	<div class='back'>
+		<div class='log'>
+			<a href="{{url_for('logout')}}" class='log'>Logout</a>
+		</div>
+		<h1>hi {{name}} ! Here are the Stats</h1>
+		<div class='section'>
+			<h2>Category Wise Stats</h2>
+			<canvas id="categoryStatsChart"></canvas>
+			<script>
+				var ctx= document.getElementById('categoryStatsChart').getContext('2d');
+				var categoryStats= {{data.category_stats | tojson}};
+				var categoryNames=categoryStats.map(stat=>stat.name);
+				var productCounts=categoryStats.map(stat=>stat.product_count);
+				var totalquantities=categoryStats.map(stat=>stat.total_quantity);
+
+
+				var chart=new Chart(ctx,{
+					type:'bar',
+					data:{
+						labels:categoryNames,
+						datasets:[{
+							label:'Number of Products',
+							data:productCounts,
+							backgroundColor:'rgba(54,162,235,0.2)',
+							borderColor:'rgba(54,162,235,1)',
+							borderWidth:1
+						} ,{
+							label:'Total Quantity',
+							data:totalquantities,
+							backgroundColor:'rgba(75,192,195,0.2)',
+							borderColor:'rgba(75,192,195,1)',
+							borderWidth:1
+						}]
+					},
+					options:{
+						scales:{
+							y:{
+								beginAtZero:true
+							}
+						}
+					}
+				});
+
+			</script>	
+		</div>
+	</div>		
+</body>
+</html>

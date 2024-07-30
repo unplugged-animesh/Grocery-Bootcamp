@@ -115,6 +115,34 @@ def admin_dashboard(curr_login_id):
         flash('Please login to acess the admin dashboard')
         return redirect(url_for('logout'))
     
+    
+@app.route('/admin/<int:curr_login_id>/stats',methods=['GET'])
+def admin_stats(curr_login_id):
+    if 'user_id' in session and session['user_id']==curr_login_id:
+        user=User.query.get(curr_login_id)
+        if not user.admin:
+            flash('Not Allowed')
+            return redirect(f'/dashboard/{curr_login_id}')
+        
+        categories=Category.query.all()
+        category_stats=[]
+        for category in categories:
+            product_count=len(category.products)
+            total_quantity=sum([product.quantity for product in category.products])
+            category_stats.append({
+                'name':category.name,
+                'product_count':product_count,
+                'total_quantity':total_quantity
+                
+            })
+        data={
+            'curr_login_id':curr_login_id,
+            'category_stats':category_stats
+        }
+        return render_template('admin_stats.html',data=data,name=user.username)
+    return redirect(url_for('logout'))
+        
+    
 @app.route('/customer/<int:curr_login_id>/dashboard', methods=['GET'])
 def customer_dashboard(curr_login_id):
     if request.method == 'GET':
@@ -393,20 +421,23 @@ def checkout(curr_login_id):
 
         return redirect(url_for('customer_dashboard', curr_login_id=curr_login_id))
 
-    return render_template('checkout.html', data=data) 
+    return render_template('checkout.html', data=data)
+
+
+@app.route('/customer/<int:curr_login_id>/search', methods=['GET', 'POST'])
+def search(curr_login_id):
+    if request.method=="POST":
+        search_query=request.form['search']
+        products=Product.query.filter(
+            Product.name.ilike(f'%{search_query}%')
+        ).all()
+        categories=Category.query.filter(
+            Category.name.ilike(f'%{search_query}%')
+        ).all()
+        
+        return render_template('search.html',curr_login_id=curr_login_id,search_query=search_query,products=products,categories=categories)
+    return redirect(url_for('home'))
     
-    
-    
-
-
-
-
-
-
-
-
-
-
 
 
 
